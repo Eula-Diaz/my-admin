@@ -1,7 +1,24 @@
-import { Typography, Avatar } from "antd";
+import { Typography, Avatar, Dropdown, Space, message } from "antd";
+import { DownOutlined } from "@ant-design/icons";
+import type { MenuProps } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const { Text } = Typography;
+
 function Header() {
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+    message.success("退出成功");
+  };
+  
+  const items: MenuProps["items"] = [
+    {
+      label: <span onClick={handleLogout}>退出</span>,
+      key: "0",
+    },
+  ];
   return (
     <header
       style={{
@@ -25,7 +42,14 @@ function Header() {
       >
         <Avatar>A</Avatar>
 
-        <Text>Admin</Text>
+        <Dropdown menu={{ items }} trigger={["click"]}>
+          <a onClick={(e) => e.preventDefault()}>
+            <Space>
+              Admin
+              <DownOutlined />
+            </Space>
+          </a>
+        </Dropdown>
       </div>
     </header>
   );
