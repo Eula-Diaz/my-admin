@@ -1,6 +1,17 @@
-import { Alert, Button, Space, Table, Popconfirm, Input } from "antd";
+import {
+  Alert,
+  Button,
+  Space,
+  Table,
+  Popconfirm,
+  Input,
+  Modal,
+  Form,
+  InputNumber,
+  message,
+} from "antd";
 import { useEffect, useState } from "react";
-import { getUsers, deleteUser } from "../../api/user";
+import { getUsers, deleteUser, createUser, updateUser } from "../../api/user";
 import type { User } from "../../types/user";
 
 function User() {
@@ -12,6 +23,11 @@ function User() {
   const [keyword, setKeyword] = useState("");
   const [total, setTotal] = useState(0);
   const [searchInput, setSearchInput] = useState("");
+  const [open, setOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [form] = Form.useForm();
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [messageApi, contextHolder] = message.useMessage();
 
   const loadUsers = (
     currentPage: number = page,
@@ -43,12 +59,23 @@ function User() {
     deleteUser(id)
       .then(() => {
         console.log(`用户 ${id} 删除成功`);
+        messageApi.success(`用户 ${id} 删除成功`);
         loadUsers(); // 删除后重新加载用户数据
       })
       .catch((err) => {
         console.log(`删除用户 ${id} 失败:`, err);
         setError(true);
+        messageApi.error(`删除用户 ${id} 失败: ${err}`);
       });
+  };
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    form.setFieldsValue({
+      name: user.name,
+      age: user.age,
+    });
+    setOpen(true);
   };
 
   const columns = [
@@ -72,14 +99,19 @@ function User() {
       dataIndex: "",
       key: "action",
       render: (_: unknown, record: User) => (
-        <Popconfirm
-          title="确定要删除这个用户吗？"
-          onConfirm={() => {
-            handleDeleteUser(record.id);
-          }}
-        >
-          <Button danger>Delete</Button>
-        </Popconfirm>
+        <>
+          <Button type="link" onClick={() => handleEdit(record)}>
+            编辑
+          </Button>
+          <Popconfirm
+            title="确定要删除这个用户吗？"
+            onConfirm={() => {
+              handleDeleteUser(record.id);
+            }}
+          >
+            <Button danger>Delete</Button>
+          </Popconfirm>
+        </>
       ),
     },
   ];
@@ -88,8 +120,29 @@ function User() {
     loadUsers();
   }, []);
 
+  const handleSubmit = async (values: { name: string; age: number }) => {
+    setSubmitLoading(true);
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.id, values);
+      } else {
+        await createUser(values);
+      }
+      messageApi.success(editingUser ? "更新用户成功" : "创建用户成功");
+      setOpen(false);
+      await loadUsers();
+      form.resetFields();
+    } catch (error) {
+      console.error(error);
+      messageApi.error("操作失败,请稍后重试");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
   return (
     <>
+      {contextHolder}
       {error && (
         <Alert
           title="获取用户数据失败"
@@ -125,6 +178,16 @@ function User() {
         >
           刷新
         </Button>
+        <Button
+          type="primary"
+          onClick={() => {
+            setEditingUser(null);
+            form.resetFields();
+            setOpen(true);
+          }}
+        >
+          新增用户
+        </Button>
       </Space>
       <Table
         dataSource={users}
@@ -141,6 +204,39 @@ function User() {
           },
         }}
       />
+
+      <Modal
+        title={editingUser ? "编辑用户" : "新增用户"}
+        open={open}
+        onCancel={() => {
+          setOpen(false);
+          form.resetFields();
+          setEditingUser(null);
+        }}
+        footer={null}
+      >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="用户名"
+            name="name"
+            rules={[{ required: true, message: "请输入用户名" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="年龄"
+            name="age"
+            rules={[{ required: true, message: "请输入年龄" }]}
+          >
+            <InputNumber min={1} max={150} style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Button type="primary" htmlType="submit" loading={submitLoading}>
+            {editingUser ? "保存" : "创建"}
+          </Button>
+        </Form>
+      </Modal>
     </>
   );
 }

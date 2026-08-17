@@ -35,4 +35,35 @@ export const handlers = [
       );
     }
   }),
+  http.post("/api/users", async ({ request }) => {
+    const body = (await request.json()) as {
+      name: string;
+      age: number;
+    };
+
+    const newUser = {
+      id: users.length + 1,
+      name: body.name,
+      age: body.age,
+    };
+
+    users.push(newUser);
+
+    return HttpResponse.json(newUser, { status: 201 });
+  }),
+  http.put("/api/users/:id", async ({ request, params }) => {
+    const body = (await request.json()) as {
+      name: string;
+      age: number;
+    };
+    const { id } = params;
+    const userId = parseInt(id as string, 10);
+    const index = users.findIndex((user) => user.id === userId);
+    if (index !== -1) {
+      users[index] = { ...users[index], ...body };
+      return HttpResponse.json(users[index]);
+    } else {
+      return HttpResponse.json({ message: `User ${userId} not found` }, { status: 404 });
+    }
+  }),
 ];
