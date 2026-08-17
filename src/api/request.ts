@@ -31,7 +31,9 @@ request.interceptors.response.use(
   },
   (error) => {
     // Handle response errors here
-    if (error.response.status === 401) {
+    const status = error.response.status;
+    const url = error.config.url;
+    if (status === 401 && !url.includes("/login")) {
       // Server responded with a status other than 2xx
       console.log("Token 失效");
       localStorage.removeItem("token");

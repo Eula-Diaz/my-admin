@@ -66,4 +66,22 @@ export const handlers = [
       return HttpResponse.json({ message: `User ${userId} not found` }, { status: 404 });
     }
   }),
+  http.post("/api/login", async ({ request }) => {
+    const body = (await request.json()) as {
+      username: string;
+      password: string;
+    };
+    if (body.username === "admin" && body.password === "123456") {
+      return HttpResponse.json({ token: "mock-token-123", user: { id: 1, username: "admin", role: "admin" } });
+    } 
+    else if (body.username === "editor" && body.password === "123456") {
+      return HttpResponse.json({ token: "mock-token-456", user: { id: 2, username: "editor", role: "editor" } });
+    }
+    else if (body.username === "viewer" && body.password === "123456") {
+      return HttpResponse.json({ token: "mock-token-789", user: { id: 3, username: "viewer", role: "viewer" } });
+    }
+    else {
+      return HttpResponse.json({ message: "Invalid username or password" }, { status: 401 });
+    }
+  }),
 ];
