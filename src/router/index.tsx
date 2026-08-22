@@ -8,6 +8,8 @@ import Settings from "../pages/Settings";
 import About from "../pages/About";
 import Login from "../pages/Login";
 import ProtectedRoute from "./ProtectedRoute";
+import Forbidden from "../pages/Forbidden";
+import PermissionRoute from "../components/PermissionRoute";
 
 const router = createBrowserRouter([
   {
@@ -35,7 +37,11 @@ const router = createBrowserRouter([
           },
           {
             path: "settings",
-            element: <Settings />,
+            element: (
+              <PermissionRoute permission="settings:view">
+                <Settings />
+              </PermissionRoute>
+            ),
           },
           {
             path: "about",
@@ -44,6 +50,10 @@ const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: "/403",
+    element: <Forbidden />,
   },
 ]);
 

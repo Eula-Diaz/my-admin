@@ -1,25 +1,9 @@
 import { Menu } from "antd";
 import type { MenuProps } from "antd";
 import { useNavigate } from "react-router-dom";
-
-const items: MenuProps["items"] = [
-  {
-    key: "/dashboard",
-    label: "首页",
-  },
-  {
-    key: "/user",
-    label: "用户管理",
-  },
-  {
-    key: "/settings",
-    label: "系统设置",
-  },
-  {
-    key: "/about",
-    label: "关于我们",
-  },
-];
+import type { CurrentUser } from "../../types/auth";
+import { hasPermission } from "../../types/auth";
+import { menuItems } from "../../config/menu";
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -27,6 +11,25 @@ function Sidebar() {
   const handleMenuClick: MenuProps["onClick"] = ({ key }) => {
     navigate(key);
   };
+
+  const userString = localStorage.getItem("user");
+  const currentUser: CurrentUser | null = userString
+    ? JSON.parse(userString)
+    : null;
+
+  const visibleItems = currentUser
+    ? menuItems.filter((item) => {
+        return hasPermission(currentUser.role, item.permission);
+      })
+    : [];
+
+  console.log("当前用户:", currentUser, "可见菜单项:", visibleItems);
+
+  const items: MenuProps["items"] = visibleItems.map((item) => ({
+    key: item.key,
+    label: item.label,
+  }));
+
   return (
     <aside
       style={{

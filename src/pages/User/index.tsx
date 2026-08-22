@@ -13,6 +13,8 @@ import {
 import { useEffect, useState } from "react";
 import { getUsers, deleteUser, createUser, updateUser } from "../../api/user";
 import type { User } from "../../types/user";
+import type { CurrentUser } from "../../types/auth";
+import { hasPermission } from "../../types/auth";
 
 function User() {
   const [users, setUsers] = useState<User[]>([]);
@@ -28,6 +30,11 @@ function User() {
   const [form] = Form.useForm();
   const [submitLoading, setSubmitLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
+
+  const userString = localStorage.getItem("user");
+  const currentUser: CurrentUser | null = userString
+    ? JSON.parse(userString)
+    : null;
 
   const loadUsers = (
     currentPage: number = page,
@@ -100,17 +107,21 @@ function User() {
       key: "action",
       render: (_: unknown, record: User) => (
         <>
-          <Button type="link" onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这个用户吗？"
-            onConfirm={() => {
-              handleDeleteUser(record.id);
-            }}
-          >
-            <Button danger>Delete</Button>
-          </Popconfirm>
+          {currentUser && hasPermission(currentUser.role, "user:edit") && (
+            <Button type="link" onClick={() => handleEdit(record)}>
+              编辑
+            </Button>
+          )}
+          {currentUser && hasPermission(currentUser.role, "user:delete") && (
+            <Popconfirm
+              title="确定要删除这个用户吗？"
+              onConfirm={() => {
+                handleDeleteUser(record.id);
+              }}
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          )}
         </>
       ),
     },
@@ -178,16 +189,18 @@ function User() {
         >
           刷新
         </Button>
-        <Button
-          type="primary"
-          onClick={() => {
-            setEditingUser(null);
-            form.resetFields();
-            setOpen(true);
-          }}
-        >
-          新增用户
-        </Button>
+        {currentUser && hasPermission(currentUser.role, "user:add") && (
+          <Button
+            type="primary"
+            onClick={() => {
+              setEditingUser(null);
+              form.resetFields();
+              setOpen(true);
+            }}
+          >
+            新增用户
+          </Button>
+        )}
       </Space>
       <Table
         dataSource={users}
